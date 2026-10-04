@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teaching Timetable</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#17375f">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2317375f'/%3E%3Cpath d='M13 21h38M13 32h38M13 43h26' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f6f7f9; color: #17243a; font: 16px/1.4 system-ui, sans-serif; }
+  main { max-width: 760px; margin: auto; padding: 20px 16px calc(var(--controls-height, 160px) + 20px); }
+  button { font: inherit; cursor: pointer; }
+  .controls {
+    position: fixed;
+    z-index: 10;
+    bottom: 0;
+    left: 50%;
+    width: min(100%, 760px);
+    transform: translateX(-50%);
+    background: #f6f7f9;
+    border-top: 1px solid #d6dce5;
+    box-shadow: 0 -6px 18px #17243a12;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  }
+  .views, .selectors { display: flex; flex-wrap: wrap; gap: 6px; }
+  .views { margin-bottom: 8px; }
+  .views button { flex: 1; }
+  .selectors button { flex: 0 0 auto; }
+  button { border: 1px solid #d6dce5; background: white; color: #34455f; border-radius: 10px; padding: 9px 14px; }
+  button.active { background: #17375f; color: white; border-color: #17375f; }
+  button:focus-visible { outline: 3px solid #85b5e6; outline-offset: 2px; }
+  h1 { font-size: 1.35rem; margin: 0 0 4px; }
+  .summary { color: #66758a; margin: 0 0 20px; font-size: .9rem; }
+  .day-label { color: #66758a; font-weight: 700; margin: 22px 0 9px; }
+  .group { background: white; border: 1px solid #dce2e9; border-radius: 12px; margin: 14px 0; overflow: hidden; }
+  .group h2 { font-size: 1.05rem; margin: 0; padding: 12px 16px; background: #eaf0f7; }
+  .session { padding: 12px 16px; border-top: 1px solid #e3e8ee; }
+  .session strong { display: block; }
+  .session span { color: #66758a; font-size: .9rem; }
+  .lessons { display: grid; gap: 10px; }
+  .lesson, .gap { background: white; border: 1px solid #dce2e9; border-radius: 12px; padding: 14px 16px; }
+  .lesson { border-left: 4px solid #566bb0; }
+  .lesson.linux { border-left-color: #328873; }
+  .lesson.mobile { border-left-color: #be7940; }
+  .time { color: #58677c; font-size: .88rem; font-weight: 700; }
+  .subject { font-weight: 750; margin-top: 5px; }
+  .detail { color: #66758a; font-size: .9rem; margin-top: 2px; }
+  .gap { color: #7a8493; border-style: dashed; }
+  @media (max-width: 500px) { main { padding: 16px 12px calc(var(--controls-height, 160px) + 20px); } .controls { padding-left: 12px; padding-right: 12px; } }
+</style>
+</head>
+<body>
+<main>
+  <section id="schedule" aria-live="polite"></section>
+  <div class="controls">
+    <nav class="views" aria-label="Timetable view">
+      <button type="button" data-view="day">By day</button>
+      <button type="button" data-view="class">By class</button>
+      <button type="button" data-view="subject">By subject</button>
+    </nav>
+    <nav class="selectors" id="selectors" aria-label="Choose a day or class"></nav>
+  </div>
+</main>
+<script>
+const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
+const times = [
+  ['8:30', '9:15'], ['9:20', '10:05'], ['10:30', '11:15'],
+  ['11:20', '12:05'], ['12:10', '12:55'], ['1:00', '1:45']
+];
+const lessons = [
+  // day, class, subject, first period, last period, room
+  ['Sunday', 'PRO-4C', 'C++', 0, 1, '70'],
+  ['Sunday', 'NET-5A', 'Linux LPI', 2, 3, '59'],
+  ['Sunday', 'PRO-4B', 'C++', 4, 4, '70'],
+  ['Sunday', 'PRO-4A', 'C++', 5, 5, '52'],
+  ['Monday', 'PRO-4A', 'C++', 0, 1, '70'],
+  ['Monday', 'PRO-4D', 'C++', 2, 3, '70'],
+  ['Monday', 'PRO-4B', 'C++', 4, 5, '70'],
+  ['Tuesday', 'PRO-5C', 'Mobile Technology', 0, 1, '69'],
+  ['Tuesday', 'PRO-4D', 'C++', 2, 2, '70'],
+  ['Tuesday', 'PRO-4C', 'C++', 3, 3, '70'],
+  ['Tuesday', 'PRO-4A', 'C++', 4, 5, '70'],
+  ['Wednesday', 'PRO-5A', 'Mobile Technology', 0, 1, '46'],
+  ['Wednesday', 'PRO-4C', 'C++', 2, 3, '70'],
+  ['Wednesday', 'PRO-4D', 'C++', 4, 5, '70'],
+  ['Thursday', 'PRO-4B', 'C++', 0, 1, '70'],
+  ['Thursday', 'PRO-5B', 'Mobile Technology', 2, 3, '47'],
+  ['Thursday', 'NET-5A', 'Linux LPI', 4, 5, '59']
+].map(([day, group, subject, first, last, room]) => ({day, group, subject, first, last, room}));
+const groups = [...new Set(lessons.map(lesson => lesson.group))].sort();
+const subjects = ['C++', 'Linux LPI', 'Mobile Technology'];
+let view = 'day';
+let selectedDay = days.includes(days[new Date().getDay()]) ? days[new Date().getDay()] : 'Sunday';
+let selectedGroup = groups[0];
+let selectedSubject = subjects[0];
+
+function weekStart(today = new Date()) {
+  const sunday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const weekday = sunday.getDay();
+  sunday.setDate(sunday.getDate() + (weekday >= 5 ? 7 - weekday : -weekday));
+  return sunday;
+}
+function dateFor(day) {
+  const date = weekStart();
+  date.setDate(date.getDate() + days.indexOf(day));
+  return new Intl.DateTimeFormat('en-GB', {day: 'numeric', month: 'short', year: 'numeric'}).format(date);
+}
+
+function time(lesson) {
+  return `${times[lesson.first][0]}–${times[lesson.last][1]}`;
+}
+function card(lesson) {
+  const style = lesson.subject === 'Linux LPI' ? 'linux' :
+    lesson.subject === 'Mobile Technology' ? 'mobile' : '';
+  const periods = lesson.first === lesson.last ? `${lesson.first + 1}` :
+    `${lesson.first + 1}–${lesson.last + 1}`;
+  return `<article class="lesson ${style}">
+    <div class="time">${time(lesson)} · Period${lesson.first === lesson.last ? '' : 's'} ${periods}</div>
+    <div class="subject">${lesson.subject}</div>
+    <div class="detail">${lesson.group}${lesson.room ? ` · ${lesson.room}` : ''}</div>
+  </article>`;
+}
+function render() {
+  document.querySelectorAll('[data-view]').forEach(button => {
+    button.classList.toggle('active', button.dataset.view === view);
+    button.setAttribute('aria-pressed', button.dataset.view === view);
+  });
+  const choices = view === 'day' ? days : view === 'class' ? groups : subjects;
+  const selected = view === 'day' ? selectedDay : view === 'class' ? selectedGroup : selectedSubject;
+  document.querySelector('#selectors').innerHTML = choices.map(choice =>
+    `<button type="button" data-choice="${choice}" class="${choice === selected ? 'active' : ''}"
+      aria-pressed="${choice === selected}">${view === 'day' ? choice.slice(0, 3) : choice === 'Mobile Technology' ? 'Mobile Tech' : choice}</button>`
+  ).join('');
+  const schedule = document.querySelector('#schedule');
+  if (view === 'day') {
+    const entries = lessons.filter(lesson => lesson.day === selectedDay)
+      .sort((a, b) => a.first - b.first);
+    const missing = times.map((_, period) => period).filter(period =>
+      !entries.some(lesson => lesson.first <= period && lesson.last >= period));
+    const items = [
+      ...entries.map(lesson => ({period: lesson.first, html: card(lesson)})),
+      ...missing.map(period => ({period, html:
+        `<div class="gap">${times[period][0]}–${times[period][1]} · Period ${period + 1} unassigned</div>`}))
+    ].sort((a, b) => a.period - b.period);
+    schedule.innerHTML = `<h1>${selectedDay} · ${dateFor(selectedDay)}</h1><p class="summary">${6 - missing.length} of 6 periods assigned</p>
+      <div class="lessons">${items.map(item => item.html).join('')}</div>`;
+  } else if (view === 'class') {
+    const entries = lessons.filter(lesson => lesson.group === selectedGroup)
+      .sort((a, b) => days.indexOf(a.day) - days.indexOf(b.day) || a.first - b.first);
+    schedule.innerHTML = `<h1>${selectedGroup}</h1><p class="summary">${entries.reduce((sum, lesson) => sum + lesson.last - lesson.first + 1, 0)} periods per week</p>` +
+      entries.map(lesson => `<h2 class="day-label">${lesson.day} · ${dateFor(lesson.day)}</h2>${card(lesson)}`).join('');
+  } else {
+    const entries = lessons.filter(lesson => lesson.subject === selectedSubject);
+    const subjectGroups = [...new Set(entries.map(lesson => lesson.group))].sort();
+    schedule.innerHTML = `<h1>${selectedSubject}</h1><p class="summary">${subjectGroups.length} classes · ${entries.length} sessions per week</p>` +
+      subjectGroups.map(group => {
+        const sessions = entries.filter(lesson => lesson.group === group)
+          .sort((a, b) => days.indexOf(a.day) - days.indexOf(b.day) || a.first - b.first);
+        return `<section class="group"><h2>${group}</h2>${sessions.map(lesson => {
+          const periods = lesson.first === lesson.last ? `${lesson.first + 1}` : `${lesson.first + 1}–${lesson.last + 1}`;
+          return `<div class="session"><strong>${lesson.day} · ${dateFor(lesson.day)}</strong><span>${time(lesson)} · Period${lesson.first === lesson.last ? '' : 's'} ${periods} · Room ${lesson.room}</span></div>`;
+        }).join('')}</section>`;
+      }).join('');
+  }
+}
+document.querySelector('.views').addEventListener('click', event => {
+  const button = event.target.closest('[data-view]');
+  if (button) { view = button.dataset.view; render(); }
+});
+document.querySelector('#selectors').addEventListener('click', event => {
+  const button = event.target.closest('[data-choice]');
+  if (!button) return;
+  if (view === 'day') selectedDay = button.dataset.choice;
+  else if (view === 'class') selectedGroup = button.dataset.choice;
+  else selectedSubject = button.dataset.choice;
+  render();
+});
+render();
+let currentDate = new Date().toDateString();
+function refreshDate() {
+  const today = new Date().toDateString();
+  if (today !== currentDate) { currentDate = today; render(); }
+}
+document.addEventListener('visibilitychange', refreshDate);
+setInterval(refreshDate, 60 * 1000);
+new ResizeObserver(([entry]) => {
+  document.documentElement.style.setProperty('--controls-height', `${entry.target.offsetHeight}px`);
+}).observe(document.querySelector('.controls'));
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
