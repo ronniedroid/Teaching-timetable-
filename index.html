@@ -71,23 +71,23 @@ const times = [
 ];
 const lessons = [
   // day, class, subject, first period, last period, room
-  ['Sunday', 'PRO-4C', 'C++', 0, 1, '70'],
-  ['Sunday', 'NET-5A', 'Linux LPI', 2, 3, '59'],
-  ['Sunday', 'PRO-4B', 'C++', 4, 4, '70'],
-  ['Sunday', 'PRO-4A', 'C++', 5, 5, '52'],
-  ['Monday', 'PRO-4A', 'C++', 0, 1, '70'],
-  ['Monday', 'PRO-4D', 'C++', 2, 3, '70'],
-  ['Monday', 'PRO-4B', 'C++', 4, 5, '70'],
-  ['Tuesday', 'PRO-5C', 'Mobile Technology', 0, 1, '69'],
-  ['Tuesday', 'PRO-4D', 'C++', 2, 2, '70'],
-  ['Tuesday', 'PRO-4C', 'C++', 3, 3, '70'],
-  ['Tuesday', 'PRO-4A', 'C++', 4, 5, '70'],
-  ['Wednesday', 'PRO-5A', 'Mobile Technology', 0, 1, '46'],
-  ['Wednesday', 'PRO-4C', 'C++', 2, 3, '70'],
-  ['Wednesday', 'PRO-4D', 'C++', 4, 5, '70'],
-  ['Thursday', 'PRO-4B', 'C++', 0, 1, '70'],
-  ['Thursday', 'PRO-5B', 'Mobile Technology', 2, 3, '47'],
-  ['Thursday', 'NET-5A', 'Linux LPI', 4, 5, '59']
+  ['Sunday', 'PRO-5A', 'Mobile Technology', 0, 1, '46'],
+  ['Sunday', 'PRO-4B', 'C++', 2, 3, '70'],
+  ['Sunday', 'NET-5A', 'Linux LPI', 4, 5, '59'],
+  ['Monday', 'PRO-4D', 'C++', 0, 0, '70'],
+  ['Monday', 'PRO-4A', 'C++', 1, 2, '70'],
+  ['Monday', 'PRO-4B', 'C++', 3, 3, '70'],
+  ['Monday', 'PRO-4C', 'C++', 4, 5, '70'],
+  ['Tuesday', 'PRO-4D', 'C++', 0, 1, '70'],
+  [Tuesday', 'PRO-4B', 'C++', 2, 3, '70'],
+  [Tuesday', 'PRO-4C', 'C++', 4, 4, '70'],
+  [Tuesday', 'PRO-4A', 'C++', 5, 5, '52'],
+  [Wednesday', 'NET-5A', 'Linux LPI', 0, 1, '59'],
+  ['Wednesday', 'PRO-4A', 'C++', 2, 3, '70'],
+  ['Wednesday', 'PRO-4C', 'C++', 4, 5, '70'],
+  ['Thursday', 'PRO-5B', 'Mobile Technology', 0, 1, '47'],
+  ['Thursday', 'PRO-5C', 'Mobile Technology', 2, 3, '69'],
+  ['Thursday', 'PRO-4D', 'C++', 4, 5, '70']
 ].map(([day, group, subject, first, last, room]) => ({day, group, subject, first, last, room}));
 const groups = [...new Set(lessons.map(lesson => lesson.group))].sort();
 const subjects = ['C++', 'Linux LPI', 'Mobile Technology'];
